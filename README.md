@@ -67,7 +67,7 @@ $env:ORCHESTRATOR_URL = "http://localhost:8080"
 go run .\cmd\agent\main.go
 ~~~
 
-## API Endpoints
+# API Endpoints:
 
 ### 1. Добавление выражения
 
@@ -88,15 +88,19 @@ curl --location 'http://localhost:8080/api/v1/calculate' \
 Успешный ответ (201):
 
 ```json
-{
-    "id": "1"
-}
+{"id": "1"}
 ```
 
 ### 2. Получение списка выражений
 
 ```bash
 GET /api/v1/expressions
+```
+
+Пример запроса:
+
+```bash
+curl --location 'localhost:8080/api/v1/expressions'
 ```
 
 Пример ответа (200):
@@ -113,7 +117,7 @@ GET /api/v1/expressions
         {
             "id": "2",
             "expression": "8/(4-4)",
-            "status": "error",
+            "status": "in_progress",
             "result": null
         }
     ]
@@ -123,28 +127,30 @@ GET /api/v1/expressions
 ### 3. Получение выражения по ID
 
 ```bash
-GET /api/v1/expressions/{id}
+GET /api/v1/expressions/:id
 ```
 
 Пример запроса:
 
 ```bash
-curl http://localhost:8080/api/v1/expressions/1
+curl --location 'localhost:8080/api/v1/expressions/:1'
 ```
 
 Ответ (200):
 
 ```json
 {
+    {
     "expression": {
         "id": "1",
+        "expression": "(2+3)*4-10/2",
         "status": "completed",
         "result": 15
     }
 }
 ```
 
-## Внутреннее API (для взаимодействия горутин Агента с Оркестратором)
+# Внутреннее API (для взаимодействия горутин Агента с Оркестратором)
 
 ### 1. Получение задачи
 
@@ -181,7 +187,7 @@ POST /internal/task
 }
 ```
 
-## Переменные окружения
+# Переменные окружения
 
 ### Оркестратор
 
@@ -194,9 +200,9 @@ POST /internal/task
 ### Агент
 
 - `ORCHESTRATOR_URL` - URL оркестратора
-- `COMPUTING_POWER` - количество параллельных задач
+- `COMPUTING_POWER` - количество горутин
 
-## Примеры сценариев
+# Примеры сценариев
 
 ### Сценарий 1: Успешное вычисление
 
@@ -206,9 +212,9 @@ curl --location 'http://localhost:8080/api/v1/calculate' \
 --data '{"expression": "2+2*2"}'
 
 # Проверка статуса
-curl http://localhost:8080/api/v1/expressions/1
+curl --location 'localhost:8080/api/v1/expressions/:1'
 
-# Ответ через 500 мс:
+# Ответ:
 {
     "expression": {
         "id": "1",
@@ -224,18 +230,47 @@ curl http://localhost:8080/api/v1/expressions/1
 curl --location 'http://localhost:8080/api/v1/calculate' \
 --data '{"expression": "10/(5-5)"}'
 
-# Ответ:
+# Проверка статуса
+curl --location 'localhost:8080/api/v1/expressions/:2'
+
+# Ответ(статус 200):
 {
     "expression": {
         "id": "2",
-        "status": "error",
+        "status": "in_progress",
         "result": null
     }
 }
 ```
 
-## Тестирование
+### Сценарий 3: Невалидные данные
 
 ```bash
-go test .\tests\
+curl --location 'http://localhost:8080/api/v1/calculate' \
+--data '{"expression": "}'
+
+# Ответ(статус 422):
+{"error":"Invalid Body"}
+
 ```
+# Тесты
+
+#### Тест Агента
+
+~~~powershell
+cd calc2
+go test .\internal\agent
+
+# ok      github.com/Rail-KH/calc2/internal/agent 1.322s
+~~~
+
+#### Тест Оркестратора
+
+~~~powershell
+cd calc2
+go test .\internal\orchestrator
+
+# ok      github.com/Rail-KH/calc2/internal/orchestrator  1.145s
+~~~
+
+### Для запросов можно использовать программу Postman
