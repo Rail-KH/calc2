@@ -218,6 +218,7 @@ curl --location 'localhost:8080/api/v1/expressions/:1'
 {
     "expression": {
         "id": "1",
+        "expression": "2+2*2"
         "status": "completed",
         "result": 6
     }
@@ -237,6 +238,7 @@ curl --location 'localhost:8080/api/v1/expressions/:2'
 {
     "expression": {
         "id": "2",
+        "expression": "10/(5-5)"
         "status": "in_progress",
         "result": null
     }
