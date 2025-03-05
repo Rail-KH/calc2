@@ -214,7 +214,7 @@ curl --location 'http://localhost:8080/api/v1/calculate' \
 # Проверка статуса
 curl --location 'localhost:8080/api/v1/expressions/:1'
 
-# Ответ:
+# Ответ(статус 200):
 {
     "expression": {
         "id": "1",
