@@ -35,10 +35,207 @@ graph TD
 
 ## Скопируйте репозиторий:
 
-```cmd
+~~~powershell
 git clone https://github.com/Rail-KH/calc2
+~~~
+
+~~~powershell
+cd calc2
+~~~
+
+## Запустите Оркестратор:
+
+~~~powershell
+# Установка времени операций (в миллисекундах)
+$env:TIME_ADDITION_MS = "200"
+$env:TIME_SUBTRACTION_MS = "200"
+$env:TIME_MULTIPLICATIONS_MS = "300"
+$env:TIME_DIVISIONS_MS = "400"
+
+# Запуск оркестратора
+go run .\cmd\orchestrator\main.go
+~~~
+
+## Запустите Агента:
+
+~~~powershell
+# Указание вычислительной мощности (количество горутин) и URL оркестратора
+$env:COMPUTING_POWER = "4"
+$env:ORCHESTRATOR_URL = "http://localhost:8080"
+
+# Запуск агента
+go run .\cmd\agent\main.go
+~~~
+
+## API Endpoints
+
+### 1. Добавление выражения
+
+```bash
+POST /api/v1/calculate
 ```
 
-```cmd
-cd calc2
+Пример запроса:
+
+```bash
+curl --location 'http://localhost:8080/api/v1/calculate' \
+--header 'Content-Type: application/json' \
+--data '{
+  "expression": "(2+3)*4-10/2"
+}'
+```
+
+Успешный ответ (201):
+
+```json
+{
+    "id": "1"
+}
+```
+
+### 2. Получение списка выражений
+
+```bash
+GET /api/v1/expressions
+```
+
+Пример ответа (200):
+
+```json
+{
+    "expressions": [
+        {
+            "id": "1",
+            "expression": "(2+3)*4-10/2",
+            "status": "completed",
+            "result": 15
+        },
+        {
+            "id": "2",
+            "expression": "8/(4-4)",
+            "status": "error",
+            "result": null
+        }
+    ]
+}
+```
+
+### 3. Получение выражения по ID
+
+```bash
+GET /api/v1/expressions/{id}
+```
+
+Пример запроса:
+
+```bash
+curl http://localhost:8080/api/v1/expressions/1
+```
+
+Ответ (200):
+
+```json
+{
+    "expression": {
+        "id": "1",
+        "status": "completed",
+        "result": 15
+    }
+}
+```
+
+## Внутреннее API (для взаимодействия горутин Агента с Оркестратором)
+
+### 1. Получение задачи
+
+```bash
+GET /internal/task
+```
+
+Пример ответа (200):
+
+```json
+{
+    "task": {
+        "id": "5",
+        "arg1": 2,
+        "arg2": 3,
+        "operation": "+",
+        "operation_time": 200
+    }
+}
+```
+
+### 2. Отправка результата
+
+```bash
+POST /internal/task
+```
+
+Пример запроса:
+
+```json
+{
+  "id": "5",
+  "result": 5
+}
+```
+
+## Переменные окружения
+
+### Оркестратор
+
+- `PORT` - порт сервера (по умолчанию 8080)
+- `TIME_ADDITION_MS` - время сложения (мс)
+- `TIME_SUBTRACTION_MS` - время вычитания (мс)
+- `TIME_MULTIPLICATIONS_MS` - время умножения (мс)
+- `TIME_DIVISIONS_MS` - время деления (мс)
+
+### Агент
+
+- `ORCHESTRATOR_URL` - URL оркестратора
+- `COMPUTING_POWER` - количество параллельных задач
+
+## Примеры сценариев
+
+### Сценарий 1: Успешное вычисление
+
+```bash
+# Отправка выражения
+curl --location 'http://localhost:8080/api/v1/calculate' \
+--data '{"expression": "2+2*2"}'
+
+# Проверка статуса
+curl http://localhost:8080/api/v1/expressions/1
+
+# Ответ через 500 мс:
+{
+    "expression": {
+        "id": "1",
+        "status": "completed",
+        "result": 6
+    }
+}
+```
+
+### Сценарий 2: Ошибка деления на ноль
+
+```bash
+curl --location 'http://localhost:8080/api/v1/calculate' \
+--data '{"expression": "10/(5-5)"}'
+
+# Ответ:
+{
+    "expression": {
+        "id": "2",
+        "status": "error",
+        "result": null
+    }
+}
+```
+
+## Тестирование
+
+```bash
+go test .\tests\
 ```
